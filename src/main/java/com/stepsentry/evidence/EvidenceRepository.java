@@ -17,7 +17,7 @@ public interface EvidenceRepository extends JpaRepository<Evidence, Long> {
             + "FROM Evidence e WHERE e.requirement.id IN :requirementIds GROUP BY e.requirement.id")
     List<RequirementEvidenceCount> countByRequirementIds(@Param("requirementIds") Collection<Long> requirementIds);
 
-    @Query("SELECT new com.stepsentry.evidence.RequirementEvidenceVersion(e.requirement.id, e.sourceVersion) "
+    @Query("SELECT new com.stepsentry.evidence.RequirementEvidenceVersion(e.requirement.id, e.sourceVersion, e.status) "
             + "FROM Evidence e WHERE e.requirement.id IN :requirementIds")
     List<RequirementEvidenceVersion> findEvidenceVersionsByRequirementIds(@Param("requirementIds") Collection<Long> requirementIds);
 }

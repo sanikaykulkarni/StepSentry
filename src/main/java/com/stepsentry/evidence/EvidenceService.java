@@ -60,6 +60,18 @@ public class EvidenceService {
         evidenceRepository.delete(evidence);
     }
 
+    @Transactional
+    public EvidenceResponse review(
+            Long workflowId,
+            Long requirementId,
+            Long evidenceId,
+            com.stepsentry.evidence.api.ReviewEvidenceRequest request
+    ) {
+        Evidence evidence = requireEvidence(workflowId, requirementId, evidenceId);
+        evidence.updateStatus(request.status());
+        return EvidenceResponse.from(evidence);
+    }
+
     private WorkflowRequirement requireRequirement(Long workflowId, Long requirementId) {
         workflowRepository.findById(workflowId)
                 .orElseThrow(() -> new ResourceNotFoundException("Workflow not found: " + workflowId));

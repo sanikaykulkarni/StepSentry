@@ -60,4 +60,24 @@ public class EvidenceController {
     ) {
         evidenceService.delete(workflowId, requirementId, evidenceId);
     }
+
+    @org.springframework.web.bind.annotation.PatchMapping("/{evidenceId}/review")
+    public EvidenceResponse review(
+            @PathVariable Long workflowId,
+            @PathVariable Long requirementId,
+            @PathVariable Long evidenceId,
+            @Valid @RequestBody com.stepsentry.evidence.api.ReviewEvidenceRequest request
+    ) {
+        return evidenceService.review(workflowId, requirementId, evidenceId, request);
+    }
+
+    @org.springframework.web.bind.annotation.PutMapping("/{evidenceId}/review")
+    public EvidenceResponse reviewPut(
+            @PathVariable Long workflowId,
+            @PathVariable Long requirementId,
+            @PathVariable Long evidenceId,
+            @Valid @RequestBody com.stepsentry.evidence.api.ReviewEvidenceRequest request
+    ) {
+        return evidenceService.review(workflowId, requirementId, evidenceId, request);
+    }
 }

@@ -2,8 +2,11 @@ package com.stepsentry.readiness;
 
 import com.stepsentry.common.exception.ResourceNotFoundException;
 import com.stepsentry.evidence.EvidenceRepository;
+import com.stepsentry.evidence.EvidenceStatus;
 import com.stepsentry.evidence.RequirementEvidenceVersion;
 import com.stepsentry.readiness.api.MissingRequirementItem;
+import com.stepsentry.readiness.api.PendingRequirementItem;
+import com.stepsentry.readiness.api.RejectedRequirementItem;
 import com.stepsentry.readiness.api.RequirementReadinessItem;
 import com.stepsentry.readiness.api.StaleRequirementItem;
 import com.stepsentry.readiness.api.WorkflowReadinessResponse;
@@ -52,7 +55,9 @@ public class WorkflowReadinessService {
                     workflow.getStatus(),
                     workflowVersion,
                     true,
-                    new WorkflowReadinessSummary(0, 0, 0, 0, 0),
+                    new WorkflowReadinessSummary(0, 0, 0, 0, 0, 0, 0),
+                    List.of(),
+                    List.of(),
                     List.of(),
                     List.of(),
                     List.of()
@@ -66,33 +71,49 @@ public class WorkflowReadinessService {
         List<RequirementEvidenceVersion> evidenceVersions =
                 evidenceRepository.findEvidenceVersionsByRequirementIds(requirementIds);
 
-        Map<Long, List<String>> versionsByRequirementId = evidenceVersions.stream()
-                .collect(Collectors.groupingBy(
-                        RequirementEvidenceVersion::requirementId,
-                        Collectors.mapping(RequirementEvidenceVersion::sourceVersion, Collectors.toList())
-                ));
+        Map<Long, List<RequirementEvidenceVersion>> versionsByRequirementId = evidenceVersions.stream()
+                .collect(Collectors.groupingBy(RequirementEvidenceVersion::requirementId));
 
         List<RequirementReadinessItem> readinessItems = new ArrayList<>(requirements.size());
         List<MissingRequirementItem> missingItems = new ArrayList<>();
         List<StaleRequirementItem> staleItems = new ArrayList<>();
+        List<PendingRequirementItem> pendingItems = new ArrayList<>();
+        List<RejectedRequirementItem> rejectedItems = new ArrayList<>();
 
         int mandatoryCount = 0;
         int satisfiedMandatoryCount = 0;
 
         for (WorkflowRequirement requirement : requirements) {
-            List<String> versions = versionsByRequirementId.getOrDefault(requirement.getId(), List.of());
-            long evidenceCount = versions.size();
+            List<RequirementEvidenceVersion> items =
+                    versionsByRequirementId.getOrDefault(requirement.getId(), List.of());
+            long evidenceCount = items.size();
 
             long currentEvidenceCount = 0;
             long staleEvidenceCount = 0;
             long versionUnavailableEvidenceCount = 0;
+            long approvedEvidenceCount = 0;
+            long pendingEvidenceCount = 0;
+            long rejectedEvidenceCount = 0;
+            long satisfyingCount = 0;
 
-            for (String evVersion : versions) {
-                EvidenceFreshnessStatus status = classifyFreshness(workflowVersion, evVersion);
+            for (RequirementEvidenceVersion item : items) {
+                EvidenceStatus status = item.status() != null ? item.status() : EvidenceStatus.PENDING;
                 switch (status) {
+                    case APPROVED -> approvedEvidenceCount++;
+                    case PENDING -> pendingEvidenceCount++;
+                    case REJECTED -> rejectedEvidenceCount++;
+                }
+
+                EvidenceFreshnessStatus freshness = classifyFreshness(workflowVersion, item.sourceVersion());
+                switch (freshness) {
                     case CURRENT -> currentEvidenceCount++;
                     case POTENTIALLY_STALE -> staleEvidenceCount++;
                     case VERSION_UNAVAILABLE -> versionUnavailableEvidenceCount++;
+                }
+
+                // Only APPROVED evidence that is CURRENT or VERSION_UNAVAILABLE satisfies a requirement
+                if (status == EvidenceStatus.APPROVED && freshness != EvidenceFreshnessStatus.POTENTIALLY_STALE) {
+                    satisfyingCount++;
                 }
             }
 
@@ -107,7 +128,7 @@ public class WorkflowReadinessService {
                 aggregateFreshness = EvidenceFreshnessStatus.VERSION_UNAVAILABLE;
             }
 
-            boolean satisfied = (currentEvidenceCount > 0 || versionUnavailableEvidenceCount > 0);
+            boolean satisfied = (satisfyingCount > 0);
 
             if (requirement.isMandatory()) {
                 mandatoryCount++;
@@ -119,12 +140,29 @@ public class WorkflowReadinessService {
                             requirement.getTitle(),
                             requirement.getSortOrder()
                     ));
-                } else {
+                } else if (approvedEvidenceCount > 0) {
+                    // Has approved evidence, but all approved items are potentially stale
                     staleItems.add(new StaleRequirementItem(
                             requirement.getId(),
                             requirement.getTitle(),
                             requirement.getSortOrder(),
                             (int) staleEvidenceCount
+                    ));
+                } else if (pendingEvidenceCount > 0) {
+                    // Has evidence awaiting review
+                    pendingItems.add(new PendingRequirementItem(
+                            requirement.getId(),
+                            requirement.getTitle(),
+                            requirement.getSortOrder(),
+                            (int) pendingEvidenceCount
+                    ));
+                } else {
+                    // All attached evidence was rejected
+                    rejectedItems.add(new RejectedRequirementItem(
+                            requirement.getId(),
+                            requirement.getTitle(),
+                            requirement.getSortOrder(),
+                            (int) rejectedEvidenceCount
                     ));
                 }
             }
@@ -139,20 +177,28 @@ public class WorkflowReadinessService {
                     aggregateFreshness,
                     currentEvidenceCount,
                     staleEvidenceCount,
-                    versionUnavailableEvidenceCount
+                    versionUnavailableEvidenceCount,
+                    approvedEvidenceCount,
+                    pendingEvidenceCount,
+                    rejectedEvidenceCount
             ));
         }
 
         int missingMandatoryCount = missingItems.size();
         int staleMandatoryCount = staleItems.size();
-        boolean ready = (missingMandatoryCount == 0 && staleMandatoryCount == 0);
+        int pendingMandatoryCount = pendingItems.size();
+        int rejectedMandatoryCount = rejectedItems.size();
+        boolean ready = (missingMandatoryCount == 0 && staleMandatoryCount == 0
+                && pendingMandatoryCount == 0 && rejectedMandatoryCount == 0);
 
         WorkflowReadinessSummary summary = new WorkflowReadinessSummary(
                 requirements.size(),
                 mandatoryCount,
                 satisfiedMandatoryCount,
                 missingMandatoryCount,
-                staleMandatoryCount
+                staleMandatoryCount,
+                pendingMandatoryCount,
+                rejectedMandatoryCount
         );
 
         return new WorkflowReadinessResponse(
@@ -163,6 +209,8 @@ public class WorkflowReadinessService {
                 summary,
                 missingItems,
                 staleItems,
+                pendingItems,
+                rejectedItems,
                 readinessItems
         );
     }

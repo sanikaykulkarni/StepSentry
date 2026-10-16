@@ -44,6 +44,10 @@ public class Evidence {
     @Column(length = 100)
     private String sourceVersion;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private EvidenceStatus status = EvidenceStatus.PENDING;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -67,6 +71,7 @@ public class Evidence {
         this.evidenceUrl = evidenceUrl;
         this.description = description;
         this.sourceVersion = sourceVersion;
+        this.status = EvidenceStatus.PENDING;
     }
 
     @PrePersist
@@ -74,6 +79,9 @@ public class Evidence {
         Instant now = Instant.now();
         createdAt = now;
         updatedAt = now;
+        if (status == null) {
+            status = EvidenceStatus.PENDING;
+        }
     }
 
     @PreUpdate
@@ -107,6 +115,14 @@ public class Evidence {
 
     public String getSourceVersion() {
         return sourceVersion;
+    }
+
+    public EvidenceStatus getStatus() {
+        return status;
+    }
+
+    public void updateStatus(EvidenceStatus status) {
+        this.status = status;
     }
 
     public Instant getCreatedAt() {
