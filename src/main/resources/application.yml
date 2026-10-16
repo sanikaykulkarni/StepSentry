@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: stepsentry
+  datasource:
+    url: ${STEPSENTRY_DB_URL:jdbc:mysql://localhost:3306/stepsentry?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${STEPSENTRY_DB_USERNAME:root}
+    password: ${STEPSENTRY_DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Local default is update so the workflows table is created on startup.
+      # Set STEPSENTRY_JPA_DDL_AUTO=none (or validate) before any shared/production deploy.
+      ddl-auto: ${STEPSENTRY_JPA_DDL_AUTO:update}
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+server:
+  port: ${SERVER_PORT:8080}
+
+logging:
+  level:
+    com.stepsentry: INFO
