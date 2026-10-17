@@ -49,12 +49,13 @@ public class WorkflowReadinessService {
         List<WorkflowRequirement> requirements =
                 requirementRepository.findByWorkflowIdOrderBySortOrderAscIdAsc(workflowId);
 
+        // A workflow without any requirements must not be considered ready for release.
         if (requirements.isEmpty()) {
             return new WorkflowReadinessResponse(
                     workflow.getId(),
                     workflow.getStatus(),
                     workflowVersion,
-                    true,
+                    false,
                     new WorkflowReadinessSummary(0, 0, 0, 0, 0, 0, 0),
                     List.of(),
                     List.of(),
@@ -111,7 +112,7 @@ public class WorkflowReadinessService {
                     case VERSION_UNAVAILABLE -> versionUnavailableEvidenceCount++;
                 }
 
-                // Only APPROVED evidence that is CURRENT or VERSION_UNAVAILABLE satisfies a requirement
+                // Only APPROVED evidence that is CURRENT or VERSION_UNAVAILABLE satisfies a requirement.
                 if (status == EvidenceStatus.APPROVED && freshness != EvidenceFreshnessStatus.POTENTIALLY_STALE) {
                     satisfyingCount++;
                 }
@@ -128,7 +129,7 @@ public class WorkflowReadinessService {
                 aggregateFreshness = EvidenceFreshnessStatus.VERSION_UNAVAILABLE;
             }
 
-            boolean satisfied = (satisfyingCount > 0);
+            boolean satisfied = satisfyingCount > 0;
 
             if (requirement.isMandatory()) {
                 mandatoryCount++;
@@ -141,7 +142,7 @@ public class WorkflowReadinessService {
                             requirement.getSortOrder()
                     ));
                 } else if (approvedEvidenceCount > 0) {
-                    // Has approved evidence, but all approved items are potentially stale
+                    // Has approved evidence, but all approved items are potentially stale.
                     staleItems.add(new StaleRequirementItem(
                             requirement.getId(),
                             requirement.getTitle(),
@@ -149,7 +150,7 @@ public class WorkflowReadinessService {
                             (int) staleEvidenceCount
                     ));
                 } else if (pendingEvidenceCount > 0) {
-                    // Has evidence awaiting review
+                    // Has evidence awaiting review.
                     pendingItems.add(new PendingRequirementItem(
                             requirement.getId(),
                             requirement.getTitle(),
@@ -157,7 +158,7 @@ public class WorkflowReadinessService {
                             (int) pendingEvidenceCount
                     ));
                 } else {
-                    // All attached evidence was rejected
+                    // All attached evidence was rejected.
                     rejectedItems.add(new RejectedRequirementItem(
                             requirement.getId(),
                             requirement.getTitle(),
@@ -188,8 +189,13 @@ public class WorkflowReadinessService {
         int staleMandatoryCount = staleItems.size();
         int pendingMandatoryCount = pendingItems.size();
         int rejectedMandatoryCount = rejectedItems.size();
-        boolean ready = (missingMandatoryCount == 0 && staleMandatoryCount == 0
-                && pendingMandatoryCount == 0 && rejectedMandatoryCount == 0);
+
+        // Require at least one requirement, and ensure every mandatory requirement passes.
+        boolean ready = !requirements.isEmpty()
+                && missingMandatoryCount == 0
+                && staleMandatoryCount == 0
+                && pendingMandatoryCount == 0
+                && rejectedMandatoryCount == 0;
 
         WorkflowReadinessSummary summary = new WorkflowReadinessSummary(
                 requirements.size(),

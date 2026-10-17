@@ -48,3 +48,8 @@ bin/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Node.js dependencies
+node_modules/
+stepsentry-ui/node_modules/
+stepsentry-ui/dist/

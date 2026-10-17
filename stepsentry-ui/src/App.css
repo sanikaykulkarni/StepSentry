@@ -1,0 +1,156 @@
+
+body {
+  margin: 0;
+  background: #f4f6fa;
+  color: #172438;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.app-shell { min-height: 100vh; }
+
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 235px;
+  padding: 30px 18px;
+  background: #111c2e;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  z-index: 2;
+}
+
+.brand { font-weight: 800; letter-spacing: -1px; margin-bottom: 48px; }
+.brand i, .brand span { color: #b8f36b; }
+.nav-label, .eyebrow { font-size: 10px; letter-spacing: 1.5px; font-weight: 800; color: #8493a8; }
+.nav-label { margin: 0 12px 14px; }
+
+.nav-link-custom {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  padding: 13px 14px;
+  margin: 3px 0;
+  border-radius: 9px;
+  color: #aab7ca;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.nav-link-custom.active, .nav-link-custom:hover {
+  background: #25344a;
+  color: #b8f36b;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 12px;
+  border: 1px solid #354258;
+  border-radius: 8px;
+  color: #d2dbea;
+  font-size: 11px;
+}
+.sidebar-bottom i { color: #b8f36b; margin-right: 8px; }
+
+.main-area { margin-left: 235px; padding: 0 38px 24px; }
+.topbar {
+  height: 66px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e9ef;
+  font-size: 11px;
+  color: #64748b;
+}
+.live-dot { color: #477b2a; font-size: 10px; font-weight: 800; }
+
+.page-heading {
+  padding: 35px 0 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+.page-heading h1 { font-size: clamp(26px, 3vw, 37px); font-weight: 800; letter-spacing: -1.5px; margin: 8px 0; }
+.page-heading h1 span { color: #699c32; }
+.page-heading p:last-child { font-size: 13px; }
+
+.btn-lime {
+  background: #b8f36b;
+  border: 0;
+  border-radius: 8px;
+  padding: 12px 17px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.btn-lime:hover { background: #a5e653; }
+
+.metric-card {
+  height: 100%;
+  background: white;
+  border: 1px solid #e8edf2;
+  border-radius: 12px;
+  padding: 20px;
+}
+.metric-icon { font-size: 22px; color: #699c32; }
+.metric-card h2 { font-size: 31px; font-weight: 800; margin: 17px 0 0; }
+.metric-card p { font-size: 12px; font-weight: 700; margin: 0; color: #617087; }
+
+.readiness-banner {
+  background: #17263b;
+  color: white;
+  border-radius: 13px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.readiness-icon { color: #b8f36b; font-size: 35px; }
+.readiness-banner h4 { margin: 7px 0; font-weight: 750; }
+.readiness-banner p:last-child { color: #afbdcf; font-size: 12px; margin: 0; }
+.health-score { border-left: 1px solid #435064; padding-left: 25px; text-align: center; }
+.health-score strong { display: block; color: #b8f36b; font-size: 29px; }
+.health-score small { color: #aab8c9; font-size: 9px; letter-spacing: 1px; }
+
+.table-panel {
+  background: white;
+  padding: 24px;
+  border: 1px solid #e8edf2;
+  border-radius: 12px;
+}
+.table-panel h5 { font-weight: 800; }
+.table { font-size: 12px; }
+.table thead th { font-size: 9px; letter-spacing: .8px; color: #8492a5; }
+.table tbody td { padding: 17px 10px; }
+.status-pill { display: inline-block; border-radius: 5px; padding: 6px 9px; font-size: 10px; font-weight: 750; }
+.ready { background: #eaf7df; color: #467b26; }
+.review { background: #fff3d8; color: #936b18; }
+.blocked { background: #fde8e7; color: #b44742; }
+
+footer {
+  padding-top: 23px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 10px;
+  color: #8492a5;
+}
+footer span { font-weight: 800; letter-spacing: 1px; }
+
+@media (max-width: 900px) {
+  .sidebar { width: 68px; padding: 22px 8px; }
+  .brand { font-size: 0; margin-bottom: 35px; }
+  .brand i { font-size: 25px; }
+  .nav-label, .sidebar-bottom { display: none; }
+  .nav-link-custom { font-size: 0; justify-content: center; padding: 14px 5px; }
+  .nav-link-custom i { font-size: 18px; }
+  .main-area { margin-left: 68px; padding: 0 18px 20px; }
+}
+
+@media (max-width: 560px) {
+  .page-heading { align-items: flex-start; flex-direction: column; }
+  .readiness-banner { align-items: flex-start; flex-wrap: wrap; padding: 17px; }
+  .health-score { margin-left: 45px; }
+  .table-panel { padding: 15px; }
+  footer { flex-direction: column; }
+}
